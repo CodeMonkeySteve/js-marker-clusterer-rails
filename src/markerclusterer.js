@@ -354,7 +354,10 @@ MarkerClusterer.prototype.getMaxZoom = function() {
  *  @return {Object} A object properties: 'text' (string) and 'index' (number).
  *  @private
  */
-MarkerClusterer.prototype.calculator_ = function(markers, numStyles) {
+MarkerClusterer.prototype.calculator_ = function(cluster) {
+  var numStyles = cluster.markerClusterer_.getStyles().length;
+  var markers = cluster.markers_;
+
   var index = 0;
   var count = markers.length;
   var dv = count;
@@ -1000,8 +1003,7 @@ Cluster.prototype.updateIcon = function() {
     return;
   }
 
-  var numStyles = this.markerClusterer_.getStyles().length;
-  var sums = this.markerClusterer_.getCalculator()(this.markers_, numStyles);
+  var sums = this.markerClusterer_.getCalculator()(this);
   this.clusterIcon_.setCenter(this.center_);
   this.clusterIcon_.setSums(sums);
   this.clusterIcon_.show();
@@ -1176,26 +1178,33 @@ ClusterIcon.prototype.onRemove = function() {
  * @param {Object} sums The sums containing:
  *   'text': (string) The text to display in the icon.
  *   'index': (number) The style index of the icon.
+ *   'style': (number) The style of the icon.
  */
 ClusterIcon.prototype.setSums = function(sums) {
   this.sums_ = sums;
   this.text_ = sums.text;
-  this.index_ = sums.index;
   if (this.div_) {
     this.div_.innerHTML = sums.text;
   }
 
-  this.useStyle();
+  var style;
+  if (sums.style)
+    style = sums.style
+  else
+  if (sums.index) {
+    var index = Math.max(0, sums.index - 1);
+    index = Math.min(this.styles_.length - 1, index);
+    style = this.styles_[index];
+  }
+
+  this.useStyle(style);
 };
 
 
 /**
  * Sets the icon to the the styles.
  */
-ClusterIcon.prototype.useStyle = function() {
-  var index = Math.max(0, this.sums_.index - 1);
-  index = Math.min(this.styles_.length - 1, index);
-  var style = this.styles_[index];
+ClusterIcon.prototype.useStyle = function(style) {
   this.url_ = style['url'];
   this.height_ = style['height'];
   this.width_ = style['width'];
